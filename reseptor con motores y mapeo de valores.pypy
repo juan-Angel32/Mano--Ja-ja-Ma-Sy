@@ -5,8 +5,8 @@ from machine import SoftI2C, Pin
 from pca9685 import PCA9685
 
 # Configura la conexión Wi-Fi
-ssid = 'ostion'
-password = '123456uu'
+ssid = 'tu red wifi'
+password = 'tu contraseña'
 
 station = network.WLAN(network.STA_IF)
 station.active(True)
@@ -20,7 +20,7 @@ print('Conexión Wi-Fi establecida')
 print('Dirección IP:', station.ifconfig()[0])
 
 # Configuración del servidor
-host = '192.168.108.4'
+host = 'agregar ip dada del emisor'
 port = 1234
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
