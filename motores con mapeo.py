@@ -1,0 +1,77 @@
+import network
+import socket
+import time
+from machine import SoftI2C, Pin
+from pca9685 import PCA9685
+
+# Configura la conexión Wi-Fi
+ssid = 'ostion'
+password = '123456uu'
+
+station = network.WLAN(network.STA_IF)
+station.active(True)
+station.connect(ssid, password)
+
+print('Conectando a la red Wi-Fi...')
+while not station.isconnected():
+    time.sleep(1)
+
+print('Conexión Wi-Fi establecida')
+print('Dirección IP:', station.ifconfig()[0])
+
+# Configuración del servidor
+host = '192.168.108.4'
+port = 1234
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.bind((host, port))
+s.listen(1)
+
+print('Esperando conexión...')
+conn, addr = s.accept()
+print('Conexión establecida con', addr)
+
+# Configura el controlador PCA9685
+i2c = SoftI2C(scl=Pin(22), sda=Pin(21))
+pca = PCA9685(i2c)
+pca.set_pwm_freq(30)  # Frecuencia de 50 Hz
+
+# Configuración de los límites de los servos
+pos0 = 172
+pos180 = 565
+
+def map_value_to_angle(value):
+    if 1700 >= value >= 4095:
+        return 0  # Rango de 4095 a 3200 mapeado a 0
+    elif 700 <= value <= 1699:
+        return 90  # Rango de 2000 a 3199 mapeado a 90
+    elif 160 <= value <= 699:
+        return 30  # Rango de 1448 a 1999 mapeado a 30
+    elif 0 <= value <= 150:
+        return 0  # Rango de 0 a 1200 mapeado a 0
+    else:
+        # Para valores fuera de los rangos especificados, mapear linealmente o como prefieras
+        return (3200 - max(value, 0)) * (180 / 3200)
+
+def set_servo(channel, value):
+    angle = map_value_to_angle(value)
+    duty_cycle = (angle / 180.0) * (pos180 - pos0) + pos0
+    pca.set_pwm(channel, 0, int(duty_cycle))
+
+while True:
+    data = conn.recv(1022)
+    if not data:
+        break
+    
+    flex_sensor_values = list(map(int, data.decode().split(',')))
+
+    print('Valores recibidos de los sensores flex:', flex_sensor_values)
+
+    set_servo(0, flex_sensor_values[0])  # Pulgar
+    set_servo(1, flex_sensor_values[1])  # Índice
+    set_servo(2, flex_sensor_values[2])  # Medio
+    set_servo(3, flex_sensor_values[3])  # Anular
+    set_servo(4, flex_sensor_values[4])  # Meñique
+
+conn.close()
+s.close()
