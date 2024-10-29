@@ -1,3 +1,5 @@
+#guardar la libreria en la esp como pca9685.py
+
 from machine import SoftI2C
 import time
 
