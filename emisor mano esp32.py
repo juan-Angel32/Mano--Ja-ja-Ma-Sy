@@ -55,3 +55,4 @@ while True:
     
     # Esperar un momento antes de la siguiente lectura
     sleep(1)
+
